@@ -1,0 +1,42 @@
+# Stage 1: Build React App
+FROM node:20 AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+# Use build only for production
+ARG MODE=prod
+ENV MODE=${MODE}
+
+RUN if [ "$MODE" = "prod" ]; then npm run build; fi
+
+# Stage 2: Serve
+# In prod: Use Nginx to serve static site
+# In dev: Use React dev server
+
+FROM node:20 AS devserver
+WORKDIR /app
+COPY --from=builder /app ./
+CMD ["npm", "start"]
+
+FROM nginx:alpine AS nginxserver
+COPY --from=builder /app/build /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
+# Final stage switcher (default: production)
+FROM alpine AS final
+
+ARG MODE=prod
+ENV MODE=${MODE}
+
+COPY --from=devserver /app /app
+COPY --from=nginxserver /usr/share/nginx/html /usr/share/nginx/html
+
+CMD sh -c 'if [ "$MODE" = "dev" ]; then cd /app && npm install && npm start; else nginx -g "daemon off;"; fi'
+
+EXPOSE 3000
