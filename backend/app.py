@@ -19,7 +19,15 @@ def get_products():
     products = cur.fetchall()
     cur.close()
     conn.close()
-    return jsonify(products)
+
+    return jsonify([
+        {"id": row[0], "name": row[1], "price": row[2]}
+        for row in products
+    ])
+
+@app.route("/")
+def index():
+    return "Backend is working!"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
