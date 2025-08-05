@@ -1,19 +1,30 @@
-FROM python:3.11-slim
+# Set build-time variable
+ARG MODE=dev
+
+# Use official Python image
+FROM python:3.10-slim AS base
+
+# Set working directory
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential libpq-dev && \
-    rm -rf /var/lib/apt/lists/*
-
+# Install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy source code
 COPY . .
 
-EXPOSE 5000
+# Dev mode
+FROM base AS dev
+ARG MODE
+ENV FLASK_ENV=development
+CMD ["python", "app.py"]
 
-# Default mode: production
-ENV MODE=prod
+# Prod mode
+FROM base AS prod
+ARG MODE
+ENV FLASK_ENV=production
+CMD ["gunicorn", "-b", "0.0.0.0:5000", "app:app"]
 
-# Use shell form CMD (not exec form)
-CMD sh -c 'if [ "$MODE" = "dev" ]; then python app.py; else gunicorn -b 0.0.0.0:5000 app:app; fi'
+# Final stage selector
+FROM ${MODE} AS final
