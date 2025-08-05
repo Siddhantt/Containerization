@@ -4,7 +4,7 @@ function App() {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/products")
+    fetch("/products")
       .then(res => res.json())
       .then(data => setProducts(data));
   }, []);
@@ -14,7 +14,7 @@ function App() {
       <h1>Product Catalog</h1>
       <ul>
         {products.map((prod, i) => (
-          <li key={i}>{prod[1]} - ${prod[2]}</li>
+          <li key={i}>{prod.name} - ${prod.price}</li>
         ))}
       </ul>
     </div>
