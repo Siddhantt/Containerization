@@ -1,41 +1,43 @@
-version: "3.8"
+version: '3.8'
 
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      args:
-        MODE: prod  # Change to dev for development
-    ports:
-      - "3000:80"  # Nginx serves on 80
+  db:
+    image: postgres
+    container_name: postgres
     environment:
-      - MODE=prod
+      POSTGRES_DB: productdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      args:
+        MODE: dev      # 🔁 Change to prod when needed
+    container_name: flask-backend
     ports:
       - "5000:5000"
     environment:
-      - MODE=prod
-      - DB_HOST=db
-      - DB_NAME=productdb
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
+      DB_HOST: db
+      DB_NAME: productdb
+      DB_USER: postgres
+      DB_PASSWORD: postgres
     depends_on:
       - db
 
-  db:
-    image: postgres:14
-    restart: always
-    environment:
-      POSTGRES_DB: productdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-
-volumes:
-  pgdata:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        MODE: dev    # 🔁 Change to prod when needed
+    container_name: react-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
